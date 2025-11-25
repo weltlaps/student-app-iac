@@ -1,0 +1,67 @@
+- name: Install required Python packages
+  pip:
+    name:
+      - docker
+      - docker-compose
+    state: present
+
+- name: Create application directory
+  file:
+    path: /opt/student-app
+    state: directory
+    mode: '0755'
+
+- name: Copy application files
+  copy:
+    src: "{{ item }}"
+    dest: /opt/student-app/
+    mode: '0644'
+  loop:
+    - app.js
+    - students.js
+    - db.js
+    - package.json
+    - Dockerfile
+
+- name: Create docker-compose.yml from template
+  template:
+    src: docker-compose.yml.j2
+    dest: /opt/student-app/docker-compose.yml
+    mode: '0644'
+
+- name: Create database initialization script
+  template:
+    src: init.sql.j2
+    dest: /opt/student-app/init.sql
+    mode: '0644'
+
+- name: Pull Docker images
+  docker_image:
+    name: "{{ item }}"
+    source: pull
+  loop:
+    - postgres:14-alpine
+    - node:18-alpine
+
+- name: Deploy application stack with Docker Compose
+  community.docker.docker_compose:
+    project_src: /opt/student-app
+    state: present
+    recreate: always
+    pull: yes
+
+- name: Wait for database to be ready
+  shell: |
+    timeout 60s bash -c 'until docker exec student_db pg_isready -U {{ db_user }} -d {{ db_name }}; do sleep 2; done'
+  register: db_ready
+  failed_when: db_ready.rc != 0
+
+- name: Check application health
+  uri:
+    url: http://localhost:{{ app_port }}/api/students
+    method: GET
+    status_code: 200
+  register: health_check
+  until: health_check.status == 200
+  retries: 10
+  delay: 5
