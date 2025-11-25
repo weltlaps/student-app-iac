@@ -1,0 +1,32 @@
+- name: Deploy Student Application Stack
+  hosts: localhost
+  connection: local
+  become: yes
+  vars:
+    app_port: 3000
+    db_port: 5432
+    db_user: student_admin
+    db_password: student_pass_123
+    db_name: student_db
+  
+  roles:
+    - role: student-app
+      tags: [student-app]
+
+  tasks:
+    - name: Wait for application to be ready
+      wait_for:
+        port: "{{ app_port }}"
+        host: '127.0.0.1'
+        delay: 10
+        timeout: 60
+      tags: [wait]
+
+    - name: Display deployment information
+      debug:
+        msg:
+          - "Student Application deployed successfully!"
+          - "Access the application at: http://localhost:{{ app_port }}"
+          - "API endpoints available at: http://localhost:{{ app_port }}/api/students"
+          - "To view logs: docker logs student_app"
+          - "To check status: docker ps"
