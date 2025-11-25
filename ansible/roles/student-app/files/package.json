@@ -1,0 +1,26 @@
+{
+  "name": "student-profile-system",
+  "version": "3.0.0",
+  "description": "Student Profile Management System with PostgreSQL Database",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest --coverage"
+  },
+  "keywords": [
+    "student",
+    "management",
+    "postgresql",
+    "docker"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "nodemon": "^2.0.22"
+  }
+}
